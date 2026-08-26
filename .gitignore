@@ -1,0 +1,38 @@
+# Node & Backend
+node_modules/
+dist/
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+coverage/
+*.tsbuildinfo
+
+# Uploads
+uploads/*.pdf
+uploads/*.png
+uploads/*.jpg
+uploads/*.mp4
+!uploads/tracking.html
+
+# Flutter & Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+ios/Pods/
+ios/.symlinks/
+*.lock
+!package-lock.json
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

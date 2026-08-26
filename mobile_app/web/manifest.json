@@ -1,0 +1,11 @@
+{
+    "name": "Apex Signage Management",
+    "short_name": "ApexSignage",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#002B49",
+    "theme_color": "#002B49",
+    "description": "Production-Ready Printing & Signage Management Mobile Application",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false
+}

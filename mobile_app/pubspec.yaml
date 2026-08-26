@@ -1,0 +1,52 @@
+name: signage_management_app
+description: "Production-Ready Printing & Signage Management Mobile Application"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI & Design System
+  google_fonts: ^6.1.0
+  flutter_svg: ^2.0.9
+  fl_chart: ^0.66.0
+  intl: ^0.19.0
+  shimmer: ^3.0.0
+
+  # State Management & Architecture
+  provider: ^6.1.1
+
+  # Networking & HTTP
+  dio: ^5.4.0
+  http: ^1.2.0
+
+  # Local Persistence & Offline Sync
+  shared_preferences: ^2.2.2
+  flutter_secure_storage: ^9.0.0
+  path_provider: ^2.1.2
+
+  # Hardware & Field Capabilities
+  geolocator: ^10.1.0
+  google_maps_flutter: ^2.5.3
+  mobile_scanner: ^3.5.6
+  qr_flutter: ^4.1.0
+  camera: ^0.10.5+9
+  image_picker: ^1.0.7
+  signature: ^5.4.0
+  url_launcher: ^6.2.4
+  uuid: ^4.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/

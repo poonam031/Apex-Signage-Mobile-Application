@@ -1,0 +1,645 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  FIELD_BOY
+  DESIGNER_OPERATOR
+  INSTALLATION_TEAM
+}
+
+enum SiteVisitStatus {
+  ASSIGNED
+  ACCEPTED
+  IN_PROGRESS
+  SUBMITTED
+  REVIEWED
+  COMPLETED
+}
+
+enum JobStage {
+  SITE_VISIT
+  DESIGN_FINAL
+  PRINTING
+  FABRICATION
+  INSTALLATION
+  DELIVERED
+}
+
+enum JobStatus {
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum MediaType {
+  PHOTO
+  ANNOTATED_PHOTO
+  VIDEO
+  BEFORE_INSTALL
+  AFTER_INSTALL
+  BILL_RECEIPT
+}
+
+enum MachineType {
+  ECO_SOLVENT
+  UV
+  SOLVENT
+  CNC_ROUTER
+}
+
+enum InventoryCategory {
+  ROLL_FEET
+  ACRYLIC_SHEET
+  LED_MODULE
+  SMPS_POWER
+  MS_PIPE
+  HARDWARE
+  CONSUMABLE
+}
+
+enum InventoryUnit {
+  FEET
+  SQ_FT
+  PIECE
+  ROLL
+  KG
+  METER
+}
+
+enum StockTransactionType {
+  STOCK_IN
+  STOCK_OUT
+  ADJUSTMENT
+  WASTE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  HALF_DAY
+  ABSENT
+}
+
+enum AttendanceMethod {
+  GEOFENCE_GPS
+  QR_SCAN
+  SELFIE
+}
+
+enum RewardCategory {
+  PRODUCTION_100SQFT
+  ZERO_WASTE
+  TIMELY_INSTALLATION
+  FIVE_STAR_RATING
+  PERFECT_ATTENDANCE
+  CUSTOM_BONUS
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  CONVERTED
+}
+
+enum InvoiceStatus {
+  UNPAID
+  PARTIALLY_PAID
+  FULLY_PAID
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  UPI
+  BANK_TRANSFER
+  CHEQUE
+}
+
+enum PettyCashCategory {
+  SCREWS
+  ADHESIVE_FEVICOL
+  TEMPO_RENTAL
+  TEA_WATER
+  HARDWARE_MISC
+  SITE_MISC
+}
+
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationChannel {
+  IN_APP
+  WHATSAPP
+  SMS
+  PUSH
+}
+
+enum DesignApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id               String          @id @default(uuid())
+  email            String          @unique
+  phone            String          @unique
+  name             String
+  passwordHash     String
+  role             UserRole        @default(FIELD_BOY)
+  isActive         Boolean         @default(true)
+  baseSalary       Float           @default(15000.0)
+  deviceToken      String?
+  avatarUrl        String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  deletedAt        DateTime?
+
+  // Relations
+  assignedSiteVisits SiteVisit[]   @relation("AssignedFieldBoy")
+  operatorJobs       JobCard[]     @relation("AssignedOperator")
+  installerJobs      JobCard[]     @relation("AssignedInstaller")
+  stageUpdates       JobStageHistory[]
+  designFiles        DesignFile[]
+  productionReports  DailyProductionReport[]
+  stockTransactions  StockTransaction[]
+  attendances        Attendance[]
+  salarySlips        SalarySlip[]
+  rewardPoints       RewardPoint[]
+  leaderboardEntries LeaderboardMonth[]
+  paymentsReceived   Payment[]
+  pettyCashExpenses  PettyCashExpense[] @relation("SubmittedExpenses")
+  approvedExpenses   PettyCashExpense[] @relation("ApprovedExpenses")
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+}
+
+model Customer {
+  id               String          @id @default(uuid())
+  name             String
+  companyName      String?
+  phone            String          @unique
+  email            String?
+  address          String
+  gstNumber        String?
+  latitude         Float?
+  longitude        Float?
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  deletedAt        DateTime?
+
+  // Relations
+  siteVisits       SiteVisit[]
+  jobs             JobCard[]
+  quotations       Quotation[]
+  invoices         Invoice[]
+  payments         Payment[]
+  feedbacks        CustomerFeedback[]
+}
+
+model SiteVisit {
+  id               String          @id @default(uuid())
+  customerId       String
+  customer         Customer        @relation(fields: [customerId], references: [id])
+  assignedToId     String
+  assignedTo       User            @relation("AssignedFieldBoy", fields: [assignedToId], references: [id])
+  visitDateTime    DateTime
+  status           SiteVisitStatus @default(ASSIGNED)
+  siteAddress      String
+  latitude         Float?
+  longitude        Float?
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  // Relations
+  measurements     Measurement[]
+  siteMedias       SiteMedia[]
+  technicalChecklist TechnicalChecklist?
+  jobCards         JobCard[]
+}
+
+model Measurement {
+  id               String          @id @default(uuid())
+  siteVisitId      String?
+  siteVisit        SiteVisit?      @relation(fields: [siteVisitId], references: [id], onDelete: Cascade)
+  jobId            String?
+  job              JobCard?        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  boardName        String          @default("Main Board")
+  lengthFeet       Float
+  heightFeet       Float
+  squareFeet       Float
+  squareMeters     Float
+  materialType     String?         // ACP Sheet, Acrylic LED, Flex, Star Flex, etc.
+  pipeGauge        String?         // 1"x1", 1.5", 18 Gauge
+  framingType      String?         // MS Structure, Backlit box, etc.
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model SiteMedia {
+  id               String          @id @default(uuid())
+  siteVisitId      String?
+  siteVisit        SiteVisit?      @relation(fields: [siteVisitId], references: [id], onDelete: Cascade)
+  jobId            String?
+  job              JobCard?        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  mediaType        MediaType
+  fileUrl          String
+  durationSeconds  Int?            // e.g. 10 for video clip
+  metadata         String?         // JSON annotations or coordinates
+  createdAt        DateTime        @default(now())
+}
+
+model TechnicalChecklist {
+  id                     String      @id @default(uuid())
+  siteVisitId            String      @unique
+  siteVisit              SiteVisit   @relation(fields: [siteVisitId], references: [id], onDelete: Cascade)
+  boardFloorHeight       String?     // e.g. "Ground Floor", "1st Floor (15 ft)"
+  powerSupplyDistanceFeet Float?
+  ladderRequired         Boolean     @default(false)
+  craneRequired          Boolean     @default(false)
+  scaffoldingRequired    Boolean     @default(false)
+  obstacles              String?     // Trees, cables, overhangs
+  notes                  String?
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+}
+
+model JobCard {
+  id                 String          @id @default(uuid())
+  jobCode            String          @unique // e.g. JB-2026-0001
+  customerId         String
+  customer           Customer        @relation(fields: [customerId], references: [id])
+  siteVisitId        String?
+  siteVisit          SiteVisit?      @relation(fields: [siteVisitId], references: [id])
+  boardType          String          // Acrylic LED Letter Board, ACP Cladding, Glow Sign Board
+  currentStage       JobStage        @default(SITE_VISIT)
+  status             JobStatus       @default(ACTIVE)
+  deadline           DateTime?
+  assignedOperatorId String?
+  assignedOperator   User?           @relation("AssignedOperator", fields: [assignedOperatorId], references: [id])
+  assignedInstallerId String?
+  assignedInstaller  User?           @relation("AssignedInstaller", fields: [assignedInstallerId], references: [id])
+  qrCodeToken        String          @unique @default(uuid())
+  trackingToken      String          @unique @default(uuid())
+  totalSqFt          Float           @default(0.0)
+  totalAmount        Float           @default(0.0)
+  pendingAmount      Float           @default(0.0)
+  notes              String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  // Relations
+  measurements       Measurement[]
+  siteMedias         SiteMedia[]
+  stageHistory       JobStageHistory[]
+  designFiles        DesignFile[]
+  productionReports  DailyProductionReport[]
+  stockTransactions  StockTransaction[]
+  quotations         Quotation[]
+  invoices           Invoice[]
+  pettyCashExpenses  PettyCashExpense[]
+  feedbacks          CustomerFeedback[]
+}
+
+model JobStageHistory {
+  id               String          @id @default(uuid())
+  jobId            String
+  job              JobCard         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  stage            JobStage
+  status           String          @default("COMPLETED")
+  updatedById      String
+  updatedBy        User            @relation(fields: [updatedById], references: [id])
+  startedAt        DateTime?
+  completedAt      DateTime        @default(now())
+  remarks          String?
+  locationLat      Float?
+  locationLng      Float?
+  createdAt        DateTime        @default(now())
+}
+
+model DesignFile {
+  id               String               @id @default(uuid())
+  jobId            String
+  job              JobCard              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  uploadedById     String
+  uploadedBy       User                 @relation(fields: [uploadedById], references: [id])
+  fileName         String
+  fileUrl          String
+  fileSizeBytes    Int?
+  version          Int                  @default(1)
+  approvalStatus   DesignApprovalStatus @default(PENDING)
+  customerFeedback String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+}
+
+model Machine {
+  id                     String                  @id @default(uuid())
+  name                   String                  // e.g. "Roland TrueVIS Eco-Solvent"
+  type                   MachineType
+  model                  String?
+  isActive               Boolean                 @default(true)
+  maxCapacitySqFtPerDay  Float?                  @default(500.0)
+  notes                  String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+
+  // Relations
+  productionReports      DailyProductionReport[]
+}
+
+model DailyProductionReport {
+  id               String          @id @default(uuid())
+  date             DateTime        @default(now())
+  operatorId       String
+  operator         User            @relation(fields: [operatorId], references: [id])
+  machineId        String
+  machine          Machine         @relation(fields: [machineId], references: [id])
+  jobId            String?
+  job              JobCard?        @relation(fields: [jobId], references: [id])
+  printedSqFt      Float
+  materialUsed     String
+  wasteSqFt        Float           @default(0.0)
+  remarks          String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model InventoryItem {
+  id               String               @id @default(uuid())
+  name             String               // e.g. "Star Flex 440 GSM 10ft Roll", "Samsung 3-LED Module"
+  category         InventoryCategory
+  unit             InventoryUnit
+  currentStock     Float                @default(0.0)
+  minStockAlert    Float                @default(10.0)
+  costPrice        Float                @default(0.0)
+  sellingPrice     Float                @default(0.0)
+  supplierName     String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  // Relations
+  transactions     StockTransaction[]
+}
+
+model StockTransaction {
+  id               String               @id @default(uuid())
+  inventoryItemId  String
+  inventoryItem    InventoryItem        @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  type             StockTransactionType
+  quantity         Float
+  referenceJobId   String?
+  referenceJob     JobCard?             @relation(fields: [referenceJobId], references: [id])
+  performedById    String
+  performedBy      User                 @relation(fields: [performedById], references: [id])
+  reason           String?
+  createdAt        DateTime             @default(now())
+}
+
+model Attendance {
+  id               String           @id @default(uuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id])
+  date             DateTime         @default(now())
+  checkInTime      DateTime
+  checkOutTime     DateTime?
+  status           AttendanceStatus @default(PRESENT)
+  method           AttendanceMethod @default(GEOFENCE_GPS)
+  checkInLat       Float?
+  checkInLng       Float?
+  selfieUrl        String?
+  isVerified       Boolean          @default(true)
+  notes            String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([userId, date])
+}
+
+model SalarySlip {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id])
+  monthYear        String          // e.g. "2026-08"
+  baseSalary       Float
+  totalDays        Int             @default(30)
+  presentDays      Float           @default(30)
+  lateMarks        Int             @default(0)
+  overtimeHours    Float           @default(0.0)
+  rewardBonus      Float           @default(0.0)
+  deductions       Float           @default(0.0)
+  netSalary        Float
+  isPaid           Boolean         @default(false)
+  paidAt           DateTime?
+  slipPdfUrl       String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@unique([userId, monthYear])
+}
+
+model RewardPoint {
+  id               String          @id @default(uuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id])
+  points           Int
+  category         RewardCategory
+  referenceId      String?         // Reference to JobCard or DPR
+  remarks          String?
+  createdAt        DateTime        @default(now())
+}
+
+model LeaderboardMonth {
+  id                   String      @id @default(uuid())
+  monthYear            String      // e.g. "2026-08"
+  userId               String
+  user                 User        @relation(fields: [userId], references: [id])
+  totalPoints          Int         @default(0)
+  rank                 Int         @default(1)
+  totalProductionSqFt  Float       @default(0.0)
+  isEmployeeOfMonth    Boolean     @default(false)
+  rewardBonusAmount    Float       @default(0.0)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  @@unique([userId, monthYear])
+}
+
+model Quotation {
+  id                   String          @id @default(uuid())
+  quoteNumber          String          @unique // e.g. QT-2026-0001
+  customerId           String
+  customer             Customer        @relation(fields: [customerId], references: [id])
+  jobId                String?
+  job                  JobCard?        @relation(fields: [jobId], references: [id])
+  isGst                Boolean         @default(true)
+  subtotalAmount       Float           @default(0.0)
+  framingCharges       Float           @default(0.0)
+  installationCharges  Float           @default(0.0)
+  gstPercentage        Float           @default(18.0)
+  gstAmount            Float           @default(0.0)
+  discountAmount       Float           @default(0.0)
+  totalAmount          Float           @default(0.0)
+  status               QuotationStatus @default(DRAFT)
+  termsAndConditions   String?
+  pdfUrl               String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  // Relations
+  items                QuotationItem[]
+  invoices             Invoice[]
+}
+
+model QuotationItem {
+  id               String          @id @default(uuid())
+  quotationId      String
+  quotation        Quotation       @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  itemDescription  String
+  lengthFeet       Float
+  heightFeet       Float
+  totalSqFt        Float
+  unitRate         Float
+  amount           Float
+  materialType     String?
+  createdAt        DateTime        @default(now())
+}
+
+model Invoice {
+  id                   String          @id @default(uuid())
+  invoiceNumber        String          @unique // e.g. INV-2026-0001
+  quotationId          String?
+  quotation            Quotation?      @relation(fields: [quotationId], references: [id])
+  customerId           String
+  customer             Customer        @relation(fields: [customerId], references: [id])
+  jobId                String?
+  job                  JobCard?        @relation(fields: [jobId], references: [id])
+  isGst                Boolean         @default(true)
+  subtotalAmount       Float           @default(0.0)
+  framingCharges       Float           @default(0.0)
+  installationCharges  Float           @default(0.0)
+  gstPercentage        Float           @default(18.0)
+  gstAmount            Float           @default(0.0)
+  discountAmount       Float           @default(0.0)
+  totalAmount          Float           @default(0.0)
+  paidAmount           Float           @default(0.0)
+  pendingBalance       Float           @default(0.0)
+  status               InvoiceStatus   @default(UNPAID)
+  dueDate              DateTime?
+  invoicePdfUrl        String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  // Relations
+  payments             Payment[]
+  items                InvoiceItem[]
+}
+
+model InvoiceItem {
+  id               String          @id @default(uuid())
+  invoiceId        String
+  invoice          Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  itemDescription  String
+  totalSqFt        Float
+  unitRate         Float
+  amount           Float
+  createdAt        DateTime        @default(now())
+}
+
+model Payment {
+  id               String          @id @default(uuid())
+  invoiceId        String
+  invoice          Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  customerId       String
+  customer         Customer        @relation(fields: [customerId], references: [id])
+  amountPaid       Float
+  paymentMethod    PaymentMethod   @default(UPI)
+  referenceNumber  String?         // UTR / Transaction ID / Cheque No
+  paymentDate      DateTime        @default(now())
+  receivedById     String
+  receivedBy       User            @relation(fields: [receivedById], references: [id])
+  notes            String?
+  createdAt        DateTime        @default(now())
+}
+
+model PettyCashExpense {
+  id               String            @id @default(uuid())
+  jobId            String?
+  job              JobCard?          @relation(fields: [jobId], references: [id])
+  employeeId       String
+  employee         User              @relation("SubmittedExpenses", fields: [employeeId], references: [id])
+  category         PettyCashCategory @default(SITE_MISC)
+  amount           Float
+  receiptPhotoUrl  String?
+  description      String
+  status           ExpenseStatus     @default(PENDING)
+  approvedById     String?
+  approvedBy       User?             @relation("ApprovedExpenses", fields: [approvedById], references: [id])
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model CustomerFeedback {
+  id               String          @id @default(uuid())
+  jobId            String
+  job              JobCard         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  customerId       String
+  customer         Customer        @relation(fields: [customerId], references: [id])
+  starRating       Int             // 1 to 5 stars
+  feedbackText     String?
+  signatureUrl     String?
+  submittedAt      DateTime        @default(now())
+  customerIp       String?
+  createdAt        DateTime        @default(now())
+}
+
+model Notification {
+  id               String              @id @default(uuid())
+  userId           String
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String
+  message          String
+  type             String              @default("SYSTEM")
+  isRead           Boolean             @default(false)
+  dataPayload      String?             // JSON string
+  channel          NotificationChannel @default(IN_APP)
+  createdAt        DateTime            @default(now())
+}
+
+model AuditLog {
+  id               String          @id @default(uuid())
+  userId           String?
+  user             User?           @relation(fields: [userId], references: [id])
+  action           String          // e.g. "JOB_STAGE_UPDATE", "STOCK_ADJUSTMENT"
+  entity           String          // e.g. "JobCard", "InventoryItem"
+  entityId         String
+  ipAddress        String?
+  userAgent        String?
+  changesPayload   String?         // JSON before/after
+  createdAt        DateTime        @default(now())
+}
+
+model AppSetting {
+  id               String          @id @default(uuid())
+  key              String          @unique
+  value            String          // JSON or string value
+  description      String?
+  category         String          @default("GENERAL")
+  updatedAt        DateTime        @updatedAt
+}

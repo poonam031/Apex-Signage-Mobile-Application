@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apex Signage - Live Project Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #002B49;
+      --accent: #00A3E0;
+      --success: #10B981;
+      --bg: #F8FAFC;
+      --card: #FFFFFF;
+      --text: #0F172A;
+      --muted: #64748B;
+      --border: #E2E8F0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 16px; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 480px; }
+    .header { text-align: center; margin-bottom: 20px; padding-top: 10px; }
+    .logo-badge { display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: var(--primary); color: white; border-radius: 12px; font-size: 24px; margin-bottom: 8px; }
+    .card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 16px; }
+    .pill { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; background: #E1F5FE; color: var(--primary); }
+    .timeline { position: relative; padding-left: 28px; margin-top: 16px; }
+    .timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+    .timeline-item { position: relative; margin-bottom: 20px; }
+    .timeline-dot { position: absolute; left: -28px; width: 18px; height: 18px; border-radius: 50%; background: white; border: 3px solid var(--border); }
+    .timeline-dot.done { background: var(--success); border-color: var(--success); }
+    .timeline-dot.active { background: var(--accent); border-color: var(--accent); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0,163,224,0.4); } 70% { box-shadow: 0 0 0 8px rgba(0,163,224,0); } 100% { box-shadow: 0 0 0 0 rgba(0,163,224,0); } }
+    .stars { display: flex; justify-content: center; gap: 8px; margin: 12px 0; font-size: 28px; cursor: pointer; color: #CBD5E1; }
+    .stars .active { color: #F59E0B; }
+    textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-top: 8px; resize: none; font-size: 13px; }
+    button { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo-badge">🖨️</div>
+      <h2 style="color: var(--primary); font-size: 20px;">Apex Signage Live Tracker</h2>
+      <p style="color: var(--muted); font-size: 12px;">Real-Time Production & Delivery Updates</p>
+    </div>
+
+    <!-- Project Card -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-weight: 800; font-size: 18px; color: var(--primary);">JB-2026-0001</span>
+        <span class="pill" id="stagePill">FABRICATION</span>
+      </div>
+      <h4 style="margin-top: 8px; font-size: 14px;">Acrylic LED 3D Letter ACP Board</h4>
+      <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Client: Sunil Mehta • Grand Galleria Mall</p>
+    </div>
+
+    <!-- Live Stage Timeline -->
+    <div class="card">
+      <h3 style="font-size: 15px; margin-bottom: 12px;">Order Milestone Timeline</h3>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot done"></div>
+          <strong style="font-size: 13px;">1. Site Visit & Measurement</strong>
+          <p style="font-size: 11px; color: var(--muted);">Dimensions & photos recorded</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot done"></div>
+          <strong style="font-size: 13px;">2. Design Final Approved</strong>
+          <p style="font-size: 11px; color: var(--muted);">Vector proof approved</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot done"></div>
+          <strong style="font-size: 13px;">3. HD Printing</strong>
+          <p style="font-size: 11px; color: var(--muted);">Eco-solvent printed & laminated</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot active"></div>
+          <strong style="font-size: 13px; color: var(--accent);">4. Fabrication in Progress</strong>
+          <p style="font-size: 11px; color: var(--muted);">CNC acrylic letter cutting & frame assembly</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <strong style="font-size: 13px;">5. Site Installation</strong>
+          <p style="font-size: 11px; color: var(--muted);">Team dispatch to site</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <strong style="font-size: 13px;">6. Delivered & Handed Over</strong>
+          <p style="font-size: 11px; color: var(--muted);">Final delivery inspection</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Installation Team Card -->
+    <div class="card">
+      <h3 style="font-size: 14px; margin-bottom: 6px;">Installation Team Lead</h3>
+      <p style="font-size: 13px;"><strong>Vikram Singh</strong> (Senior Installer)</p>
+      <p style="font-size: 12px; color: var(--muted);">Phone: +91 98765 43213</p>
+    </div>
+
+    <!-- Review Submission -->
+    <div class="card" style="text-align: center;">
+      <h3 style="font-size: 15px;">Rate Our Signage Quality</h3>
+      <div class="stars" id="starContainer">
+        <span onclick="setRating(1)">★</span>
+        <span onclick="setRating(2)">★</span>
+        <span onclick="setRating(3)">★</span>
+        <span onclick="setRating(4)">★</span>
+        <span onclick="setRating(5)" class="active">★</span>
+      </div>
+      <textarea rows="2" placeholder="Leave feedback comments for the installation crew..."></textarea>
+      <button onclick="alert('Thank you for rating Apex Signage!')">Submit Customer Feedback</button>
+    </div>
+  </div>
+
+  <script>
+    let rating = 5;
+    function setRating(r) {
+      rating = r;
+      const stars = document.querySelectorAll('#starContainer span');
+      stars.forEach((s, idx) => {
+        if (idx < r) s.classList.add('active');
+        else s.classList.remove('active');
+      });
+    }
+  </script>
+</body>
+</html>
