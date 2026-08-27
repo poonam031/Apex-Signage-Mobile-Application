@@ -318,21 +318,24 @@ class _VideoRecordingScreenState extends State<VideoRecordingScreen> {
                     Row(
                       children: [
                         Expanded(
+                          flex: 2,
                           child: OutlinedButton(
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.white,
                               side: const BorderSide(color: Colors.white38),
                               minimumSize: const Size(0, 48),
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
                             ),
                             onPressed: _startRecording,
-                            child: const Text('Re-record'),
+                            child: const Text('Re-record', style: TextStyle(fontSize: 13)),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 8),
                         Expanded(
+                          flex: 3,
                           child: CustomButton(
-                            label: 'Save & Upload Clip',
-                            icon: Icons.cloud_upload,
+                            label: 'Save & Upload',
+                            icon: Icons.check_circle_outline,
                             backgroundColor: AppColors.success,
                             onPressed: () {
                               final videoPath = _recordedVideoFile?.path ??

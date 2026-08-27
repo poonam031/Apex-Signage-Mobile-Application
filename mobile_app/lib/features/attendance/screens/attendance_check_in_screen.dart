@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/widgets/custom_button.dart';
@@ -44,13 +45,25 @@ class _AttendanceCheckInScreenState extends State<AttendanceCheckInScreen> {
   }
 
   Future<void> _handleCheckIn() async {
+    String? selfiePath;
+    if (_selectedMethod == 'SELFIE') {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.front,
+        imageQuality: 80,
+      );
+      if (image == null) return; // User cancelled selfie capture
+      selfiePath = image.path;
+    }
+
     setState(() => _isLoading = true);
 
     final payload = {
       'method': _selectedMethod,
       'latitude': 19.0761,
       'longitude': 72.8778,
-      'selfieUrl': _selectedMethod == 'SELFIE' ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300' : null,
+      'selfieUrl': selfiePath ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300',
       'notes': 'Verified via mobile app check-in screen',
     };
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/network/api_client.dart';
@@ -61,6 +62,100 @@ class _SiteVisitDetailScreenState extends State<SiteVisitDetailScreen> {
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
+  }
+
+  String? _annotatedPhotoPath;
+
+  Future<void> _captureOrSelectPhoto() async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Capture Site Facade Photo',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: AppColors.accentLight,
+                  child: Icon(Icons.camera_alt, color: AppColors.accent),
+                ),
+                title: const Text('Take Live Photo with Camera'),
+                subtitle: const Text('Capture facade using phone camera'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final picker = ImagePicker();
+                  final image = await picker.pickImage(
+                    source: ImageSource.camera,
+                    imageQuality: 85,
+                  );
+                  if (image != null && mounted) {
+                    _openAnnotationScreen(imagePath: image.path);
+                  }
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Colors.blueGrey,
+                  child: Icon(Icons.photo_library, color: Colors.white),
+                ),
+                title: const Text('Choose from Gallery'),
+                subtitle: const Text('Select existing photo from phone'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final picker = ImagePicker();
+                  final image = await picker.pickImage(
+                    source: ImageSource.gallery,
+                    imageQuality: 85,
+                  );
+                  if (image != null && mounted) {
+                    _openAnnotationScreen(imagePath: image.path);
+                  }
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Colors.grey,
+                  child: Icon(Icons.storefront, color: Colors.white),
+                ),
+                title: const Text('Use Sample Retail Facade Photo'),
+                subtitle: const Text('Pre-loaded building sample for quick demo'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _openAnnotationScreen(imageUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb18015f6?w=800');
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openAnnotationScreen({String? imagePath, String? imageUrl}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PhotoAnnotationScreen(
+          imagePath: imagePath,
+          imageUrl: imageUrl,
+          onSave: (paths, finalPath) {
+            setState(() {
+              _hasAnnotatedPhoto = true;
+              _annotatedPhotoPath = finalPath;
+            });
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _callCustomer(String phone) async {
@@ -280,19 +375,7 @@ class _SiteVisitDetailScreenState extends State<SiteVisitDetailScreen> {
                   style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.textMuted),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PhotoAnnotationScreen(
-                        imageUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb18015f6?w=800',
-                        onSave: (paths) {
-                          setState(() => _hasAnnotatedPhoto = true);
-                        },
-                      ),
-                    ),
-                  );
-                },
+                onTap: _captureOrSelectPhoto,
               ),
             ),
             const SizedBox(height: 18),

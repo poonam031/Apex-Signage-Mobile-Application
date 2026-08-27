@@ -1,6 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/widgets/custom_button.dart';
 
 class AnnotationPath {
   List<Offset> points;
@@ -17,12 +17,14 @@ class AnnotationPath {
 }
 
 class PhotoAnnotationScreen extends StatefulWidget {
-  final String imageUrl;
-  final Function(List<AnnotationPath>) onSave;
+  final String? imagePath; // Local file path or network URL
+  final String? imageUrl;
+  final Function(List<AnnotationPath>, String finalImagePath) onSave;
 
   const PhotoAnnotationScreen({
     Key? key,
-    required this.imageUrl,
+    this.imagePath,
+    this.imageUrl,
     required this.onSave,
   }) : super(key: key);
 
@@ -37,11 +39,11 @@ class _PhotoAnnotationScreenState extends State<PhotoAnnotationScreen> {
   final List<Color> _palette = [Colors.yellow, Colors.red, Colors.cyan, Colors.white, Colors.greenAccent];
 
   void _addTextCallout(Offset position) {
-    final controller = TextEditingController(text: '15.0 ft');
+    final controller = TextEditingController(text: '15.0 ft Width');
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Add Measurement Callout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        title: const Text('Add Measurement Marker', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -71,16 +73,60 @@ class _PhotoAnnotationScreenState extends State<PhotoAnnotationScreen> {
     );
   }
 
+  Widget _buildImageBackground() {
+    final path = widget.imagePath ?? widget.imageUrl;
+
+    if (path != null && !path.startsWith('http') && File(path).existsSync()) {
+      return Image.file(
+        File(path),
+        fit: BoxFit.cover,
+        errorBuilder: (ctx, err, stack) => _buildPlaceholder(),
+      );
+    } else if (path != null && path.startsWith('http')) {
+      return Image.network(
+        path,
+        fit: BoxFit.cover,
+        errorBuilder: (ctx, err, stack) => _buildPlaceholder(),
+      );
+    }
+
+    return _buildPlaceholder();
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      color: Colors.grey.shade900,
+      child: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.photo_camera_back_outlined, size: 54, color: Colors.white30),
+            SizedBox(height: 10),
+            Text('Site Facade Photo Canvas', style: TextStyle(color: Colors.white60, fontSize: 13)),
+            SizedBox(height: 4),
+            Text('Touch anywhere to draw lines or add width/height notes', style: TextStyle(color: Colors.white38, fontSize: 11)),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final activePath = widget.imagePath ?? widget.imageUrl ?? '';
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text('Site Photo Annotation'),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
+          'Site Photo Annotation',
+          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.undo),
+            icon: const Icon(Icons.undo, color: Colors.white),
             tooltip: 'Undo',
             onPressed: _paths.isNotEmpty
                 ? () {
@@ -89,16 +135,16 @@ class _PhotoAnnotationScreenState extends State<PhotoAnnotationScreen> {
                 : null,
           ),
           IconButton(
-            icon: const Icon(Icons.delete_sweep),
+            icon: const Icon(Icons.delete_sweep, color: Colors.white),
             tooltip: 'Clear All',
             onPressed: () => setState(() => _paths.clear()),
           ),
           TextButton(
             onPressed: () {
-              widget.onSave(_paths);
+              widget.onSave(_paths, activePath);
               Navigator.pop(context);
             },
-            child: const Text('SAVE', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold)),
+            child: const Text('SAVE', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 15)),
           ),
         ],
       ),
@@ -128,14 +174,14 @@ class _PhotoAnnotationScreenState extends State<PhotoAnnotationScreen> {
                     onTap: () => setState(() => _selectedColor = color),
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: 24,
-                      height: 24,
+                      width: 26,
+                      height: 26,
                       decoration: BoxDecoration(
                         color: color,
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: _selectedColor == color ? Colors.white : Colors.transparent,
-                          width: 2,
+                          width: 2.5,
                         ),
                       ),
                     ),
@@ -153,26 +199,8 @@ class _PhotoAnnotationScreenState extends State<PhotoAnnotationScreen> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Site Image Background
-                    Image.network(
-                      widget.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (ctx, err, stack) {
-                        return Container(
-                          color: Colors.grey.shade800,
-                          child: const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.camera_alt, size: 48, color: Colors.white30),
-                                SizedBox(height: 8),
-                                Text('Site Facade Photo Preview', style: TextStyle(color: Colors.white54)),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                    // Real Camera Photo or Network Image
+                    _buildImageBackground(),
 
                     // Touch Gesture Detector & Custom Painter
                     GestureDetector(
@@ -207,14 +235,21 @@ class _PhotoAnnotationScreenState extends State<PhotoAnnotationScreen> {
             ),
           ),
 
-          // Tip at bottom
+          // Tip bar at bottom
           Container(
-            padding: const EdgeInsets.all(12),
-            color: Colors.black,
-            child: const Text(
-              '💡 Tip: Select 🔤 text tool and tap anywhere on the image to add a measurement marker.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70, fontSize: 11),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: Colors.grey.shade900,
+            child: const Row(
+              children: [
+                Icon(Icons.touch_app, size: 16, color: AppColors.accent),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Draw directly on photo or use 🔤 text tool to place width/height stickers.',
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -238,7 +273,7 @@ class AnnotationPainter extends CustomPainter {
           text: ' 📐 ${item.label!} ',
           style: const TextStyle(
             color: Colors.black,
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: FontWeight.bold,
             backgroundColor: Colors.yellow,
           ),
