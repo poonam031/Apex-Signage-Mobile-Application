@@ -41,6 +41,28 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } else {
+      // Offline/Demo Mode fallback for instant physical device testing
+      if (identifier == 'admin@signage.com' ||
+          identifier == 'fieldboy@signage.com' ||
+          identifier == 'designer@signage.com' ||
+          identifier == 'installer@signage.com') {
+        final role = identifier.contains('admin')
+            ? 'SUPER_ADMIN'
+            : identifier.contains('field')
+                ? 'FIELD_BOY'
+                : identifier.contains('designer')
+                    ? 'DESIGNER_OPERATOR'
+                    : 'INSTALLATION_TEAM';
+        _user = {
+          'id': 'demo-user-01',
+          'name': identifier.split('@').first.toUpperCase(),
+          'email': identifier,
+          'role': role,
+        };
+        await LocalStorage.saveUser(_user!);
+        notifyListeners();
+        return true;
+      }
       _errorMessage = response.message ?? 'Invalid username or password';
       notifyListeners();
       return false;

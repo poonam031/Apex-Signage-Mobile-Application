@@ -1,6 +1,6 @@
 class AppConstants {
   static const String appName = 'Apex Signage';
-  static const String apiBaseUrl = 'http://10.0.2.2:5000/api/v1'; // Local emulator (or http://localhost:5000/api/v1)
+  static const String apiBaseUrl = 'http://127.0.0.1:5000/api/v1'; // Physical device via adb reverse / localhost
 
   // Roles
   static const String roleSuperAdmin = 'SUPER_ADMIN';

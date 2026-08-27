@@ -147,7 +147,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               // Simulation Bar for instant paired verification
               Container(
                 padding: const EdgeInsets.all(16),
-                color: Colors.grey.shade950,
+                color: Colors.grey.shade900,
                 child: CustomButton(
                   label: 'Simulate Scanning JB-2026-0001',
                   icon: Icons.qr_code_scanner,
