@@ -22,24 +22,32 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Install Dependencies
-        working-directory: mobile_app
-        run: flutter pub get
-
-      - name: Build iOS Application (.app)
+      - name: Install Dependencies & Setup iOS Configs
         working-directory: mobile_app
         run: |
-          flutter build ios --release --no-codesign
+          flutter pub get
+          flutter build ios --config-only
 
-      - name: Package .app into .ipa
+      - name: Build iOS IPA
         working-directory: mobile_app
         run: |
-          mkdir -p build/ios/ipa/Payload
-          cp -r build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
-          cd build/ios/ipa
-          zip -qr ApexSignage.ipa Payload
-          cd ../../..
-          echo "IPA created successfully at mobile_app/build/ios/ipa/ApexSignage.ipa"
+          flutter build ipa --no-codesign || flutter build ios --release --no-codesign
+
+      - name: Ensure IPA Packaging
+        working-directory: mobile_app
+        run: |
+          if [ -f "build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app" ] || [ -d "build/ios/iphoneos/Runner.app" ]; then
+            mkdir -p build/ios/ipa/Payload
+            if [ -d "build/ios/iphoneos/Runner.app" ]; then
+              cp -r build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
+            else
+              cp -r build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app build/ios/ipa/Payload/
+            fi
+            cd build/ios/ipa
+            zip -qr ApexSignage.ipa Payload
+            cd ../../..
+          fi
+          ls -la build/ios/ipa/
 
       - name: Upload iOS IPA Artifact
         uses: actions/upload-artifact@v4
