@@ -203,7 +203,14 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
               children: [
                 _buildStatCard('Active Jobs', '${overview['activeJobsCount']}', Icons.assignment_outlined, AppColors.primary, '${overview['totalActiveSqFt']} Total Sq.Ft'),
                 _buildStatCard('Printing Output', '${overview['printedSqFtToday']} Sq.Ft', Icons.print_outlined, AppColors.accent, 'Waste: ${overview['wasteSqFtToday']} Sq.Ft'),
-                _buildStatCard('Site Visits Today', '${overview['todayVisitsCount']}', Icons.location_on_outlined, Colors.indigo, 'Field Team Dispatched'),
+                _buildStatCard(
+                  'Site Visits Today',
+                  '${overview['todayVisitsCount']}',
+                  Icons.location_on_outlined,
+                  Colors.indigo,
+                  'Tap to Schedule & Assign',
+                  onTap: () => _showScheduleSiteVisitModal(context),
+                ),
                 _buildStatCard('Attendance & Team', '${overview['staffPresentToday']} / ${overview['totalStaff']}', Icons.how_to_reg_outlined, AppColors.success, '★ ${overview['averageCustomerRating']} Rating'),
               ],
             ),
@@ -220,7 +227,12 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                 padding: const EdgeInsets.all(14),
                 child: Column(
                   children: [
-                    _buildPipelineRow('1. Site Visit', stages['SITE_VISIT'] ?? 0, Icons.straighten),
+                    _buildPipelineRow(
+                      '1. Site Visit',
+                      stages['SITE_VISIT'] ?? 0,
+                      Icons.straighten,
+                      onTap: () => _showScheduleSiteVisitModal(context),
+                    ),
                     const Divider(height: 12),
                     _buildPipelineRow('2. Design Final', stages['DESIGN_FINAL'] ?? 0, Icons.brush),
                     const Divider(height: 12),
@@ -253,63 +265,193 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, String subtitle) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+  Widget _buildStatCard(String title, String value, IconData icon, Color color, String subtitle, {VoidCallback? onTap}) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                Icon(icon, color: color, size: 20),
+              ],
+            ),
+            Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: color)),
+            Text(subtitle, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+          ],
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    );
+  }
+
+  Widget _buildPipelineRow(String stageName, int count, IconData icon, {bool isDone = false, VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-              Icon(icon, color: color, size: 20),
-            ],
+          Icon(icon, size: 18, color: isDone ? AppColors.success : AppColors.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              stageName,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: isDone ? AppColors.success : AppColors.textPrimary,
+              ),
+            ),
           ),
-          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: color)),
-          Text(subtitle, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+            decoration: BoxDecoration(
+              color: count > 0 ? AppColors.accent.withOpacity(0.15) : AppColors.divider,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '$count active',
+              style: TextStyle(
+                color: count > 0 ? AppColors.primary : AppColors.textMuted,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPipelineRow(String stageName, int count, IconData icon, {bool isDone = false}) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: isDone ? AppColors.success : AppColors.primary),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            stageName,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-              color: isDone ? AppColors.success : AppColors.textPrimary,
+  void _showScheduleSiteVisitModal(BuildContext context) {
+    final nameCtrl = TextEditingController(text: 'Apex Retail Store');
+    final phoneCtrl = TextEditingController(text: '+91 98200 11223');
+    final addressCtrl = TextEditingController(text: 'Shop 14, Grand Galleria Mall, Link Road, Andheri West');
+    final notesCtrl = TextEditingController(text: 'Measure main facade LED board & take 10s video.');
+    String selectedFieldBoy = 'Rahul Sharma (Field Boy)';
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            top: 20,
+            left: 20,
+            right: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Schedule New Site Visit',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Assign task to Field Boy with client phone & Google Maps link.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Client / Business Name', prefixIcon: Icon(Icons.business)),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(labelText: 'Client Phone Number', prefixIcon: Icon(Icons.phone)),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: addressCtrl,
+                  decoration: const InputDecoration(labelText: 'Site Address (Google Maps)', prefixIcon: Icon(Icons.location_on)),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  value: selectedFieldBoy,
+                  decoration: const InputDecoration(labelText: 'Assign Field Boy', prefixIcon: Icon(Icons.person_pin)),
+                  items: const [
+                    DropdownMenuItem(value: 'Rahul Sharma (Field Boy)', child: Text('Rahul Sharma (Field Boy)')),
+                    DropdownMenuItem(value: 'Sameer Khan (Field Boy)', child: Text('Sameer Khan (Field Boy)')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setModalState(() => selectedFieldBoy = val);
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: notesCtrl,
+                  decoration: const InputDecoration(labelText: 'Instructions / Notes', prefixIcon: Icon(Icons.note_alt_outlined)),
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: const Icon(Icons.send_rounded),
+                    label: Text(
+                      isSaving ? 'Assigning...' : 'Assign & Dispatch Task to Field Boy',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            setModalState(() => isSaving = true);
+                            await ApiClient.post('/site-visits', {
+                              'customerId': 'cust-101',
+                              'assignedToId': 'user-field-1',
+                              'siteAddress': addressCtrl.text,
+                              'notes': notesCtrl.text,
+                            });
+                            if (mounted) {
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('✅ Site Visit assigned to $selectedFieldBoy!'),
+                                  backgroundColor: AppColors.success,
+                                ),
+                              );
+                            }
+                          },
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-          decoration: BoxDecoration(
-            color: count > 0 ? AppColors.accent.withOpacity(0.15) : AppColors.divider,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            '$count active',
-            style: TextStyle(
-              color: count > 0 ? AppColors.primary : AppColors.textMuted,
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
