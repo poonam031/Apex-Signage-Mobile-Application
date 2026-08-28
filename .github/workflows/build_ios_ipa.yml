@@ -1,61 +1,6 @@
-name: Build iOS IPA & Android APK
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  build-ios:
+build-ios:
     name: Build iOS IPA
     runs-on: macos-14
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Precache iOS & Get Dependencies
-        working-directory: mobile_app
-        run: |
-          flutter precache --ios
-          flutter pub get
-          cd ios
-          pod install
-          cd ..
-
-      - name: Build iOS Application (.app)
-        working-directory: mobile_app
-        run: |
-          flutter build ios --release --no-codesign
-
-      - name: Package .app into .ipa
-        working-directory: mobile_app
-        run: |
-          mkdir -p build/ios/ipa/Payload
-          cp -r build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
-          cd build/ios/ipa
-          zip -qr ApexSignage.ipa Payload
-          cd ../../..
-          echo "IPA created successfully at mobile_app/build/ios/ipa/ApexSignage.ipa"
-
-      - name: Upload iOS IPA Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ApexSignage-iOS-IPA
-          path: mobile_app/build/ios/ipa/ApexSignage.ipa
-          retention-days: 14
-
-  build-android:
-    name: Build Android APK
-    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
@@ -73,17 +18,19 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Install Dependencies
-        working-directory: mobile_app
-        run: flutter pub get
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods
 
-      - name: Build Android Release APK
+      - name: Get Dependencies & Install Pods
         working-directory: mobile_app
-        run: flutter build apk --release
+        run: |
+          flutter pub get
+          cd ios
+          pod install
+          cd ..
 
-      - name: Upload Android APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ApexSignage-Android-APK
-          path: mobile_app/build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 14
+      - name: Build iOS Application (.app)
+        working-directory: mobile_app
+        run: |
+          flutter build ios --release --no-codesign
