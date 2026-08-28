@@ -7,10 +7,8 @@ import 'features/dashboard/screens/main_navigation_screen.dart';
 
 import 'core/utils/permission_utils.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // Request Camera, Mic, Location, and Storage permissions on launch
-  PermissionUtils.requestAllFieldPermissions();
   runApp(const ApexSignageApp());
 }
 
