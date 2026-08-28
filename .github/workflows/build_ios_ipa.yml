@@ -22,11 +22,13 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Get Dependencies
+      - name: Precache iOS & Get Dependencies
         working-directory: mobile_app
-        run: flutter pub get
+        run: |
+          flutter precache --ios
+          flutter pub get
 
-      - name: Build iOS App (.app)
+      - name: Build iOS Application (.app)
         working-directory: mobile_app
         run: |
           flutter build ios --release --no-codesign
