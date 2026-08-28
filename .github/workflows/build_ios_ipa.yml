@@ -1,39 +1,37 @@
-name: Build iOS IPA
+name: Build iOS IPA & Android APK
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch: # Allows manual trigger from GitHub web interface
+  workflow_dispatch:
 
 jobs:
   build-ios:
     name: Build iOS IPA
-    runs-on: macos-14 # Apple Silicon macOS runner on GitHub
+    runs-on: macos-14
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.38.x'
           channel: 'stable'
           cache: true
 
-      - name: Install Dependencies
+      - name: Install CocoaPods & Dependencies
         working-directory: mobile_app
-        run: flutter pub get
+        run: |
+          flutter doctor -v
+          flutter pub get
+          cd ios
+          pod install --repo-update
+          cd ..
 
-      - name: Build iOS App (.app)
+      - name: Build iOS Application
         working-directory: mobile_app
         run: |
           flutter build ios --release --no-codesign
@@ -48,9 +46,44 @@ jobs:
           cd ../../..
           echo "IPA created successfully at mobile_app/build/ios/ipa/ApexSignage.ipa"
 
-      - name: Upload IPA Artifact
+      - name: Upload iOS IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ApexSignage-iOS-IPA
           path: mobile_app/build/ios/ipa/ApexSignage.ipa
+          retention-days: 14
+
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        working-directory: mobile_app
+        run: flutter pub get
+
+      - name: Build Android Release APK
+        working-directory: mobile_app
+        run: flutter build apk --release
+
+      - name: Upload Android APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ApexSignage-Android-APK
+          path: mobile_app/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 14
